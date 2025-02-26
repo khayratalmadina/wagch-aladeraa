@@ -162,13 +162,18 @@
       background-color: #ff9800;
       color: white;
     }
+    /* قسم إضافة رمز جديد مع بيانات صاحب الرمز */
     #addCodeSection {
       margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
     #addCodeSection input {
       padding: 5px;
       font-size: 16px;
-      width: 60%;
+      width: 80%;
       text-align: center;
     }
     #addCodeSection button {
@@ -185,7 +190,7 @@
 <body>
   <!-- شاشة الدخول الترحيبية -->
   <div id="loginScreen">
-    <h1>مرحباً بكم في واجهة المتاجر</h1>
+    <h1>مرحباً بكم</h1>
     <p>من فضلك أدخل الرمز للدخول</p>
     <input type="text" id="accessCode" placeholder="ادخل الرمز" />
     <button onclick="checkCode()">دخول</button>
@@ -194,23 +199,26 @@
 
   <!-- شاشة عرض الأيقونات -->
   <div id="mainScreen">
-    <h1>واجهة المتاجر</h1>
-    <div id="welcomeText">أهلاً وسهلاً بكم في متجرنا، اختر المتجر الذي ترغب بزيارته:</div>
+    <h1>⚕</h1>
+    <div id="welcomeText">اختر المتجر الذي ترغب بزيارته:</div>
     <div class="icons-container">
+      <!-- أيقونة الأدوية -->
       <div class="icon-card" onclick="location.href='https://khayratalmadina.github.io/Medicines-mode/'">
-        <div class="icon" style="color: rgb(173,216,230);">🩺</div>
+        <div class="icon" style="color: rgb(173,216,230);">💊🧪</div>
         <div class="title">أدوية</div>
         <div class="description">متجر الأدوية يقدم أفضل العروض</div>
       </div>
+      <!-- أيقونة المحاليل -->
       <div class="icon-card" onclick="location.href='https://khayratalmadina.github.io/khayrat-almadina/'">
-        <div class="icon" style="color: rgb(144,238,144);">🏢</div>
-        <div class="title">مكتب قمة الرافدين </div>
-        <div class="description">أفضل المنتجات ولمحاليل الطبية </div>
+        <div class="icon" style="color: rgb(144,238,144);">💉</div>
+        <div class="title">محالييل وريدية</div>
+        <div class="description">أفضل المنتجات ولمحاليل الطبية</div>
       </div>
+      <!-- أيقونة المواد العامة -->
       <div class="icon-card" onclick="location.href='https://khayratalmadina.github.io/Cosmetic-mod/'">
-        <div class="icon" style="color: rgb(255,192,203);">💄</div>
-        <div class="title">كوزمتك</div>
-        <div class="description">أحدث مستحضرات التجميل</div>
+        <div class="icon" style="color: rgb(255,192,203);">📦🩹</div>
+        <div class="title">مواد عامة</div>
+        <div class="description">أحدث المواد العامة وأفضل العروض</div>
       </div>
     </div>
     <!-- أيقونة الإدارة تظهر تحت الأيقونات الثلاث -->
@@ -224,14 +232,23 @@
   <div id="adminPanel">
     <div class="modal-content">
       <h2>لوحة الإدارة</h2>
+      <!-- قسم إضافة رمز جديد مع بيانات صاحب الرمز -->
       <div id="addCodeSection">
-        <input type="text" id="newCode" placeholder="أدخل رمز جديد" />
+        <input type="text" id="newCode" placeholder="أدخل الرمز" />
+        <input type="text" id="newPharmacyName" placeholder="اسم الصيدلية" />
+        <input type="text" id="newAddress" placeholder="العنوان" />
+        <input type="text" id="newGovernorate" placeholder="المحافظة" />
+        <input type="text" id="newPhone" placeholder="رقم الهاتف" />
         <button onclick="addNewCode()">أضف رمز</button>
       </div>
       <div id="codesContainer">
         <table id="codesTable">
           <tr>
             <th>الرمز</th>
+            <th>الصيدلية</th>
+            <th>العنوان</th>
+            <th>المحافظة</th>
+            <th>الهاتف</th>
             <th>الإجراءات</th>
           </tr>
         </table>
@@ -241,8 +258,21 @@
   </div>
 
   <script>
+    // رمز الإدارة للدخول على لوحة الإدارة
     var adminCode = "220016";
-    var defaultCodes = ["837291", "492017", "310592", "675849", "928374", "184756", "562398", "743820", "108293", "657483"];
+    // الرموز الافتراضية مع بيانات فارغة
+    var defaultCodes = [
+      { code: "837291", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "492017", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "310592", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "675849", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "928374", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "184756", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "562398", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "743820", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "108293", pharmacyName: "", address: "", governorate: "", phone: "" },
+      { code: "657483", pharmacyName: "", address: "", governorate: "", phone: "" }
+    ];
     // استرجاع الرموز من localStorage أو استخدام الرموز الافتراضية
     var validCodes = JSON.parse(localStorage.getItem('validCodes')) || defaultCodes;
     var isAdmin = false;
@@ -253,11 +283,12 @@
 
     function checkCode() {
       var code = document.getElementById("accessCode").value.trim();
-      if (code === adminCode || validCodes.includes(code)) {
-        // إخفاء شاشة الدخول وعرض الواجهة الرئيسية
+      var isValid = validCodes.some(function(item) {
+        return item.code === code;
+      });
+      if (code === adminCode || isValid) {
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("mainScreen").style.display = "block";
-        // إذا كان رمز الإدارة، يتم عرض أيقونة الإدارة
         if (code === adminCode) {
           isAdmin = true;
           document.getElementById("adminIcon").style.display = "block";
@@ -277,21 +308,29 @@
       document.getElementById("adminPanel").style.display = "none";
     }
 
-    // تحديث جدول الرموز في لوحة الإدارة مع إمكانية التمرير
+    // تحديث جدول الرموز في لوحة الإدارة مع عرض بيانات صاحب الرمز
     function populateCodesTable() {
       var table = document.getElementById("codesTable");
-      table.innerHTML = '<tr><th>الرمز</th><th>الإجراءات</th></tr>';
-      validCodes.forEach(function(code, index) {
+      table.innerHTML = '<tr><th>الرمز</th><th>الصيدلية</th><th>العنوان</th><th>المحافظة</th><th>الهاتف</th><th>الإجراءات</th></tr>';
+      validCodes.forEach(function(item, index) {
         var row = table.insertRow();
         var cellCode = row.insertCell(0);
-        var cellActions = row.insertCell(1);
-        cellCode.innerText = code;
+        var cellPharmacy = row.insertCell(1);
+        var cellAddress = row.insertCell(2);
+        var cellGovernorate = row.insertCell(3);
+        var cellPhone = row.insertCell(4);
+        var cellActions = row.insertCell(5);
+        cellCode.innerText = item.code;
+        cellPharmacy.innerText = item.pharmacyName || "-";
+        cellAddress.innerText = item.address || "-";
+        cellGovernorate.innerText = item.governorate || "-";
+        cellPhone.innerText = item.phone || "-";
         cellActions.innerHTML = '<button class="edit-btn" onclick="editCode(' + index + ')">تعديل</button>' +
                                 '<button class="delete-btn" onclick="deleteCode(' + index + ')">حذف</button>';
       });
     }
 
-    // حذف رمز من القائمة وعدم السماح باستخدامه للدخول بعد ذلك
+    // حذف رمز من القائمة
     function deleteCode(index) {
       if (confirm("هل أنت متأكد من حذف هذا الرمز؟")) {
         validCodes.splice(index, 1);
@@ -300,23 +339,48 @@
       }
     }
 
-    // تعديل رمز
+    // تعديل رمز ومعلوماته
     function editCode(index) {
-      var newCode = prompt("أدخل الرمز الجديد:", validCodes[index]);
-      if (newCode && newCode.trim() !== "") {
-        validCodes[index] = newCode.trim();
-        saveCodes();
-        populateCodesTable();
-      }
+      var current = validCodes[index];
+      var newCode = prompt("أدخل الرمز الجديد:", current.code);
+      if (!newCode || newCode.trim() === "") return;
+      var newPharmacyName = prompt("أدخل اسم الصيدلية:", current.pharmacyName);
+      var newAddress = prompt("أدخل العنوان:", current.address);
+      var newGovernorate = prompt("أدخل المحافظة:", current.governorate);
+      var newPhone = prompt("أدخل رقم الهاتف:", current.phone);
+      validCodes[index] = {
+        code: newCode.trim(),
+        pharmacyName: newPharmacyName ? newPharmacyName.trim() : "",
+        address: newAddress ? newAddress.trim() : "",
+        governorate: newGovernorate ? newGovernorate.trim() : "",
+        phone: newPhone ? newPhone.trim() : ""
+      };
+      saveCodes();
+      populateCodesTable();
     }
 
-    // إضافة رمز جديد
+    // إضافة رمز جديد مع بيانات صاحب الرمز
     function addNewCode() {
       var newCode = document.getElementById("newCode").value.trim();
-      if (newCode && !validCodes.includes(newCode)) {
-        validCodes.push(newCode);
+      var newPharmacyName = document.getElementById("newPharmacyName").value.trim();
+      var newAddress = document.getElementById("newAddress").value.trim();
+      var newGovernorate = document.getElementById("newGovernorate").value.trim();
+      var newPhone = document.getElementById("newPhone").value.trim();
+      if (newCode && !validCodes.some(item => item.code === newCode)) {
+        var newObj = {
+          code: newCode,
+          pharmacyName: newPharmacyName,
+          address: newAddress,
+          governorate: newGovernorate,
+          phone: newPhone
+        };
+        validCodes.push(newObj);
         saveCodes();
         document.getElementById("newCode").value = "";
+        document.getElementById("newPharmacyName").value = "";
+        document.getElementById("newAddress").value = "";
+        document.getElementById("newGovernorate").value = "";
+        document.getElementById("newPhone").value = "";
         populateCodesTable();
       } else {
         alert("الرمز غير صالح أو موجود بالفعل!");
