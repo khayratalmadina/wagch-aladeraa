@@ -186,9 +186,9 @@
       cursor: pointer;
     }
   </style>
-  <!-- إضافة مكتبات Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
+  <!-- استخدام مكتبات Firebase بنظام compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <!-- شاشة الدخول الترحيبية -->
@@ -203,7 +203,7 @@
   <!-- شاشة عرض الأيقونات -->
   <div id="mainScreen">
     <h1><b>⚕</b></h1>
-    <h1>مكتب  قمة الرافدين</h1>
+    <h1>مكتب قمة الرافدين</h1>
     <div id="welcomeText">
       <b>مذخر فيتامين</b>
     </div>
@@ -264,10 +264,7 @@
   </div>
 
   <script>
-    // ========================
-    // إعداد Firebase
-    // ========================
-    // بعد تسجيل الدخول إلى Firebase، قم بنسخ قيم الإعدادات الخاصة بمشروعك هنا
+    // إعداد Firebase باستخدام مكتبات compat
     const firebaseConfig = {
       apiKey: "AIzaSyCjiL-Pf2LOpIGn8TvhzNCgagQabRuuAFI",
       authDomain: "wagch-aladeraa.firebaseapp.com",
@@ -275,18 +272,13 @@
       storageBucket: "wagch-aladeraa.firebasestorage.app",
       messagingSenderId: "60044712002",
       appId: "1:60044712002:web:dc2247ae021c7f41a975db",
-   
+      measurementId: "G-V8FSXPW6JD"
     };
 
-    // تهيئة Firebase و Firestore
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ========================
-    // الوظائف الأساسية للموقع
-    // ========================
-
-    // رمز الإدارة للدخول على لوحة الإدارة
+    // متغيرات الدخول
     var adminCode = "220016";
     var isAdmin = false;
 
@@ -389,7 +381,6 @@
         return;
       }
 
-      // التحقق مما إذا كان الرمز موجود مسبقًا
       db.collection("codes").where("code", "==", newCode).get().then(querySnapshot => {
         if (!querySnapshot.empty) {
           alert("الرمز موجود بالفعل!");
