@@ -185,7 +185,6 @@
       color: white;
       cursor: pointer;
     }
-    
   </style>
 </head>
 <body>
@@ -201,10 +200,8 @@
   <!-- شاشة عرض الأيقونات -->
   <div id="mainScreen">
     <h1><b>⚕</b></h1>
-<h1>مكتب  قمة الرافدين  </h1>
-    <div id="welcomeText"> <b>مذخر فيتامين</b>
-    
-    </div>
+    <h1>مكتب قمة الرافدين</h1>
+    <div id="welcomeText"><b>مذخر فيتامين</b></div>
     <div class="icons-container">
       <!-- أيقونة الأدوية -->
       <div class="icon-card" onclick="location.href='https://khayratalmadina.github.io/Medicines-mode/'">
@@ -236,7 +233,6 @@
   <div id="adminPanel">
     <div class="modal-content">
       <h2>لوحة الإدارة</h2>
-     
       <!-- قسم إضافة رمز جديد مع بيانات صاحب الرمز -->
       <div id="addCodeSection">
         <input type="text" id="newCode" placeholder="أدخل الرمز" />
@@ -262,40 +258,55 @@
     </div>
   </div>
 
-  <script>
-    // رمز الإدارة للدخول على لوحة الإدارة
-    var adminCode = "220016";
-    // الرموز الافتراضية مع بيانات فارغة
-    var defaultCodes = [
-      { code: "837291", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "492017", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "310592", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "675849", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "928374", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "184756", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "562398", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "743820", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "108293", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "657483", pharmacyName: "", address: "", governorate: "", phone: "" }
-    ];
-    // استرجاع الرموز من localStorage أو استخدام الرموز الافتراضية
-    var validCodes = JSON.parse(localStorage.getItem('validCodes')) || defaultCodes;
-    var isAdmin = false;
+  <!-- تضمين مكتبات Firebase ودمج Firestore -->
+  <script type="module">
+    // استيراد وظائف Firebase المطلوبة (الإصدار 9)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    function saveCodes() {
-      localStorage.setItem('validCodes', JSON.stringify(validCodes));
+    // إعدادات Firebase الخاصة بمشروعك – استبدل القيم بالقيم الصحيحة
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwQFkQbpiVGW29-NnjgTJNPsMtGEb_Ezs",
+      authDomain: "samer-alatll.firebaseapp.com",
+      projectId: "samer-alatll",
+      storageBucket: "samer-alatll.firebasestorage.app",
+      messagingSenderId: "383285948594",
+      appId: "1:383285948594:web:b0be527e9f5c946a7059ab",
+      measurementId: "G-TWTG77YBR3"
+
+    };
+
+
+
+
+
+    
+    // تهيئة Firebase و Firestore
+    const appFirebase = initializeApp(firebaseConfig);
+    const db = getFirestore(appFirebase);
+
+    // رمز الإدارة الثابت
+    const adminCode = "220016";
+    let validCodes = []; // ستُملأ الرموز من قاعدة بيانات Firestore
+
+    // دالة لتحميل الرموز من مجموعة "codes" في Firestore
+    async function loadValidCodes() {
+      const querySnapshot = await getDocs(collection(db, "codes"));
+      validCodes = [];
+      querySnapshot.forEach((docSnapshot) => {
+        validCodes.push({ id: docSnapshot.id, ...docSnapshot.data() });
+      });
     }
 
-    function checkCode() {
-      var code = document.getElementById("accessCode").value.trim();
-      var isValid = validCodes.some(function(item) {
-        return item.code === code;
-      });
+    // دالة التحقق من الرمز عند تسجيل الدخول
+    async function checkCode() {
+      await loadValidCodes();
+      const code = document.getElementById("accessCode").value.trim();
+      const isValid = validCodes.some(item => item.code === code);
       if (code === adminCode || isValid) {
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("mainScreen").style.display = "block";
         if (code === adminCode) {
-          isAdmin = true;
           document.getElementById("adminIcon").style.display = "block";
         }
       } else {
@@ -303,94 +314,116 @@
       }
     }
 
-    // فتح نافذة الإدارة
-    function openAdminPanel() {
-      populateCodesTable();
-      document.getElementById("adminPanel").style.display = "flex";
-    }
-
-    function closeAdminPanel() {
-      document.getElementById("adminPanel").style.display = "none";
-    }
-
-    // تحديث جدول الرموز في لوحة الإدارة مع عرض بيانات صاحب الرمز
-    function populateCodesTable() {
-      var table = document.getElementById("codesTable");
-      table.innerHTML = '<tr><th>الرمز</th><th>الصيدلية</th><th>العنوان</th><th>المحافظة</th><th>الهاتف</th><th>الإجراءات</th></tr>';
-      validCodes.forEach(function(item, index) {
-        var row = table.insertRow();
-        var cellCode = row.insertCell(0);
-        var cellPharmacy = row.insertCell(1);
-        var cellAddress = row.insertCell(2);
-        var cellGovernorate = row.insertCell(3);
-        var cellPhone = row.insertCell(4);
-        var cellActions = row.insertCell(5);
-        cellCode.innerText = item.code;
-        cellPharmacy.innerText = item.pharmacyName || "-";
-        cellAddress.innerText = item.address || "-";
-        cellGovernorate.innerText = item.governorate || "-";
-        cellPhone.innerText = item.phone || "-";
-        cellActions.innerHTML = '<button class="edit-btn" onclick="editCode(' + index + ')">تعديل</button>' +
-                                '<button class="delete-btn" onclick="deleteCode(' + index + ')">حذف</button>';
+    // دالة تحديث جدول الرموز في لوحة الإدارة
+    async function populateCodesTable() {
+      await loadValidCodes();
+      const table = document.getElementById("codesTable");
+      table.innerHTML = `<tr>
+                           <th>الرمز</th>
+                           <th>الصيدلية</th>
+                           <th>العنوان</th>
+                           <th>المحافظة</th>
+                           <th>الهاتف</th>
+                           <th>الإجراءات</th>
+                         </tr>`;
+      validCodes.forEach((item) => {
+        const row = table.insertRow();
+        row.insertCell(0).innerText = item.code;
+        row.insertCell(1).innerText = item.pharmacyName || "-";
+        row.insertCell(2).innerText = item.address || "-";
+        row.insertCell(3).innerText = item.governorate || "-";
+        row.insertCell(4).innerText = item.phone || "-";
+        row.insertCell(5).innerHTML = `<button class="edit-btn" onclick="editCode('${item.id}')">تعديل</button>
+                                        <button class="delete-btn" onclick="deleteCode('${item.id}')">حذف</button>`;
       });
     }
 
-    // حذف رمز من القائمة
-    function deleteCode(index) {
-      if (confirm("هل أنت متأكد من حذف هذا الرمز؟")) {
-        validCodes.splice(index, 1);
-        saveCodes();
-        populateCodesTable();
-      }
-    }
+    // دالة إضافة رمز جديد إلى Firestore
+    async function addNewCode() {
+      const newCode = document.getElementById("newCode").value.trim();
+      const newPharmacyName = document.getElementById("newPharmacyName").value.trim();
+      const newAddress = document.getElementById("newAddress").value.trim();
+      const newGovernorate = document.getElementById("newGovernorate").value.trim();
+      const newPhone = document.getElementById("newPhone").value.trim();
 
-    // تعديل رمز ومعلوماته
-    function editCode(index) {
-      var current = validCodes[index];
-      var newCode = prompt("أدخل الرمز الجديد:", current.code);
-      if (!newCode || newCode.trim() === "") return;
-      var newPharmacyName = prompt("أدخل اسم الصيدلية:", current.pharmacyName);
-      var newAddress = prompt("أدخل العنوان:", current.address);
-      var newGovernorate = prompt("أدخل المحافظة:", current.governorate);
-      var newPhone = prompt("أدخل رقم الهاتف:", current.phone);
-      validCodes[index] = {
-        code: newCode.trim(),
-        pharmacyName: newPharmacyName ? newPharmacyName.trim() : "",
-        address: newAddress ? newAddress.trim() : "",
-        governorate: newGovernorate ? newGovernorate.trim() : "",
-        phone: newPhone ? newPhone.trim() : ""
-      };
-      saveCodes();
-      populateCodesTable();
-    }
-
-    // إضافة رمز جديد مع بيانات صاحب الرمز
-    function addNewCode() {
-      var newCode = document.getElementById("newCode").value.trim();
-      var newPharmacyName = document.getElementById("newPharmacyName").value.trim();
-      var newAddress = document.getElementById("newAddress").value.trim();
-      var newGovernorate = document.getElementById("newGovernorate").value.trim();
-      var newPhone = document.getElementById("newPhone").value.trim();
+      // التأكد من عدم تكرار الرمز
       if (newCode && !validCodes.some(item => item.code === newCode)) {
-        var newObj = {
-          code: newCode,
-          pharmacyName: newPharmacyName,
-          address: newAddress,
-          governorate: newGovernorate,
-          phone: newPhone
-        };
-        validCodes.push(newObj);
-        saveCodes();
-        document.getElementById("newCode").value = "";
-        document.getElementById("newPharmacyName").value = "";
-        document.getElementById("newAddress").value = "";
-        document.getElementById("newGovernorate").value = "";
-        document.getElementById("newPhone").value = "";
-        populateCodesTable();
+        try {
+          await addDoc(collection(db, "codes"), {
+            code: newCode,
+            pharmacyName: newPharmacyName,
+            address: newAddress,
+            governorate: newGovernorate,
+            phone: newPhone
+          });
+          // مسح الحقول بعد الإضافة
+          document.getElementById("newCode").value = "";
+          document.getElementById("newPharmacyName").value = "";
+          document.getElementById("newAddress").value = "";
+          document.getElementById("newGovernorate").value = "";
+          document.getElementById("newPhone").value = "";
+          populateCodesTable();
+        } catch (error) {
+          console.error("خطأ في إضافة الرمز:", error);
+        }
       } else {
         alert("الرمز غير صالح أو موجود بالفعل!");
       }
     }
+
+    // دالة تعديل رمز موجود في Firestore
+    async function editCode(id) {
+      const current = validCodes.find(item => item.id === id);
+      if (!current) return;
+      const newCode = prompt("أدخل الرمز الجديد:", current.code);
+      if (!newCode || newCode.trim() === "") return;
+      const newPharmacyName = prompt("أدخل اسم الصيدلية:", current.pharmacyName);
+      const newAddress = prompt("أدخل العنوان:", current.address);
+      const newGovernorate = prompt("أدخل المحافظة:", current.governorate);
+      const newPhone = prompt("أدخل رقم الهاتف:", current.phone);
+      try {
+        const docRef = doc(db, "codes", id);
+        await updateDoc(docRef, {
+          code: newCode.trim(),
+          pharmacyName: newPharmacyName ? newPharmacyName.trim() : "",
+          address: newAddress ? newAddress.trim() : "",
+          governorate: newGovernorate ? newGovernorate.trim() : "",
+          phone: newPhone ? newPhone.trim() : ""
+        });
+        populateCodesTable();
+      } catch (error) {
+        console.error("خطأ في تعديل الرمز:", error);
+      }
+    }
+
+    // دالة حذف رمز من Firestore
+    async function deleteCode(id) {
+      if (confirm("هل أنت متأكد من حذف هذا الرمز؟")) {
+        try {
+          await deleteDoc(doc(db, "codes", id));
+          populateCodesTable();
+        } catch (error) {
+          console.error("خطأ في حذف الرمز:", error);
+        }
+      }
+    }
+
+    // دوال فتح وإغلاق لوحة الإدارة
+    window.openAdminPanel = function() {
+      populateCodesTable();
+      document.getElementById("adminPanel").style.display = "flex";
+    };
+
+    window.closeAdminPanel = function() {
+      document.getElementById("adminPanel").style.display = "none";
+    };
+
+    // ربط الدوال بالنطاق العام ليتم استخدامها في HTML
+    window.checkCode = checkCode;
+    window.addNewCode = addNewCode;
+    window.editCode = editCode;
+    window.deleteCode = deleteCode;
+    window.populateCodesTable = populateCodesTable;
   </script>
 </body>
 </html>
