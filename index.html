@@ -185,8 +185,10 @@
       color: white;
       cursor: pointer;
     }
-    
   </style>
+  <!-- تضمين مكتبات Firebase (compat mode) -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <!-- شاشة الدخول الترحيبية -->
@@ -201,10 +203,8 @@
   <!-- شاشة عرض الأيقونات -->
   <div id="mainScreen">
     <h1><b>⚕</b></h1>
-<h1>مكتب  قمة الرافدين  </h1>
-    <div id="welcomeText"> <b>مذخر فيتامين</b>
-    
-    </div>
+    <h1>مكتب قمة الرافدين</h1>
+    <div id="welcomeText"><b>مذخر فيتامين</b></div>
     <div class="icons-container">
       <!-- أيقونة الأدوية -->
       <div class="icon-card" onclick="location.href='https://khayratalmadina.github.io/Medicines-mode/'">
@@ -236,7 +236,6 @@
   <div id="adminPanel">
     <div class="modal-content">
       <h2>لوحة الإدارة</h2>
-     
       <!-- قسم إضافة رمز جديد مع بيانات صاحب الرمز -->
       <div id="addCodeSection">
         <input type="text" id="newCode" placeholder="أدخل الرمز" />
@@ -263,31 +262,46 @@
   </div>
 
   <script>
+    // إعدادات Firebase باستخدام بيانات مشروعك
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcx6uXHzMK1HInEuFAmqsSBFvPAw86_Ts",
+      authDomain: "mohmed-mod.firebaseapp.com",
+      projectId: "mohmed-mod",
+      storageBucket: "mohmed-mod.firebasestorage.app",
+      messagingSenderId: "724585474855",
+      appId: "1:724585474855:web:a95c26f01cf062db5e9702",
+      measurementId: "G-34HJTJSXPZ"
+    };
+
+    // تهيئة Firebase و Firestore
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     // رمز الإدارة للدخول على لوحة الإدارة
     var adminCode = "220016";
-    // الرموز الافتراضية مع بيانات فارغة
-    var defaultCodes = [
-      { code: "837291", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "492017", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "310592", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "675849", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "928374", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "184756", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "562398", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "743820", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "108293", pharmacyName: "", address: "", governorate: "", phone: "" },
-      { code: "657483", pharmacyName: "", address: "", governorate: "", phone: "" }
-    ];
-    // استرجاع الرموز من localStorage أو استخدام الرموز الافتراضية
-    var validCodes = JSON.parse(localStorage.getItem('validCodes')) || defaultCodes;
+    var validCodes = []; // سيتم استرجاع الرموز من Firestore
     var isAdmin = false;
 
-    function saveCodes() {
-      localStorage.setItem('validCodes', JSON.stringify(validCodes));
+    // جلب الرموز من Firestore
+    function fetchValidCodes() {
+      validCodes = [];
+      db.collection("codes").get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          var data = doc.data();
+          data.id = doc.id; // تخزين معرف المستند للتعديل والحذف
+          validCodes.push(data);
+        });
+      }).catch((error) => {
+        console.error("Error getting codes: ", error);
+      });
     }
+
+    // استدعاء جلب الرموز عند تحميل الصفحة
+    fetchValidCodes();
 
     function checkCode() {
       var code = document.getElementById("accessCode").value.trim();
+      // التحقق من كون الرمز هو رمز الإدارة أو موجود ضمن الرموز المخزنة في Firestore
       var isValid = validCodes.some(function(item) {
         return item.code === code;
       });
@@ -305,7 +319,9 @@
 
     // فتح نافذة الإدارة
     function openAdminPanel() {
-      populateCodesTable();
+      fetchValidCodes(); // تحديث البيانات من Firestore
+      // تأخير بسيط لضمان تحميل البيانات قبل تعبئة الجدول
+      setTimeout(populateCodesTable, 1000);
       document.getElementById("adminPanel").style.display = "flex";
     }
 
@@ -313,11 +329,11 @@
       document.getElementById("adminPanel").style.display = "none";
     }
 
-    // تحديث جدول الرموز في لوحة الإدارة مع عرض بيانات صاحب الرمز
+    // تعبئة جدول الرموز في لوحة الإدارة
     function populateCodesTable() {
       var table = document.getElementById("codesTable");
       table.innerHTML = '<tr><th>الرمز</th><th>الصيدلية</th><th>العنوان</th><th>المحافظة</th><th>الهاتف</th><th>الإجراءات</th></tr>';
-      validCodes.forEach(function(item, index) {
+      validCodes.forEach(function(item) {
         var row = table.insertRow();
         var cellCode = row.insertCell(0);
         var cellPharmacy = row.insertCell(1);
@@ -330,65 +346,85 @@
         cellAddress.innerText = item.address || "-";
         cellGovernorate.innerText = item.governorate || "-";
         cellPhone.innerText = item.phone || "-";
-        cellActions.innerHTML = '<button class="edit-btn" onclick="editCode(' + index + ')">تعديل</button>' +
-                                '<button class="delete-btn" onclick="deleteCode(' + index + ')">حذف</button>';
+        cellActions.innerHTML = '<button class="edit-btn" onclick="editCode(\'' + item.id + '\')">تعديل</button>' +
+                                '<button class="delete-btn" onclick="deleteCode(\'' + item.id + '\')">حذف</button>';
       });
     }
 
-    // حذف رمز من القائمة
-    function deleteCode(index) {
+    // حذف رمز من Firestore
+    function deleteCode(docId) {
       if (confirm("هل أنت متأكد من حذف هذا الرمز؟")) {
-        validCodes.splice(index, 1);
-        saveCodes();
-        populateCodesTable();
+        db.collection("codes").doc(docId).delete().then(() => {
+          fetchValidCodes();
+          setTimeout(populateCodesTable, 1000);
+        }).catch((error) => {
+          console.error("Error deleting code: ", error);
+        });
       }
     }
 
-    // تعديل رمز ومعلوماته
-    function editCode(index) {
-      var current = validCodes[index];
-      var newCode = prompt("أدخل الرمز الجديد:", current.code);
-      if (!newCode || newCode.trim() === "") return;
-      var newPharmacyName = prompt("أدخل اسم الصيدلية:", current.pharmacyName);
-      var newAddress = prompt("أدخل العنوان:", current.address);
-      var newGovernorate = prompt("أدخل المحافظة:", current.governorate);
-      var newPhone = prompt("أدخل رقم الهاتف:", current.phone);
-      validCodes[index] = {
-        code: newCode.trim(),
-        pharmacyName: newPharmacyName ? newPharmacyName.trim() : "",
-        address: newAddress ? newAddress.trim() : "",
-        governorate: newGovernorate ? newGovernorate.trim() : "",
-        phone: newPhone ? newPhone.trim() : ""
-      };
-      saveCodes();
-      populateCodesTable();
+    // تعديل رمز ومعلوماته في Firestore
+    function editCode(docId) {
+      db.collection("codes").doc(docId).get().then((doc) => {
+        if (doc.exists) {
+          var current = doc.data();
+          var newCode = prompt("أدخل الرمز الجديد:", current.code);
+          if (!newCode || newCode.trim() === "") return;
+          var newPharmacyName = prompt("أدخل اسم الصيدلية:", current.pharmacyName);
+          var newAddress = prompt("أدخل العنوان:", current.address);
+          var newGovernorate = prompt("أدخل المحافظة:", current.governorate);
+          var newPhone = prompt("أدخل رقم الهاتف:", current.phone);
+          db.collection("codes").doc(docId).update({
+            code: newCode.trim(),
+            pharmacyName: newPharmacyName ? newPharmacyName.trim() : "",
+            address: newAddress ? newAddress.trim() : "",
+            governorate: newGovernorate ? newGovernorate.trim() : "",
+            phone: newPhone ? newPhone.trim() : ""
+          }).then(() => {
+            fetchValidCodes();
+            setTimeout(populateCodesTable, 1000);
+          }).catch((error) => {
+            console.error("Error updating code: ", error);
+          });
+        }
+      }).catch((error) => {
+        console.error("Error getting code: ", error);
+      });
     }
 
-    // إضافة رمز جديد مع بيانات صاحب الرمز
+    // إضافة رمز جديد مع بيانات صاحب الرمز إلى Firestore
     function addNewCode() {
       var newCode = document.getElementById("newCode").value.trim();
       var newPharmacyName = document.getElementById("newPharmacyName").value.trim();
       var newAddress = document.getElementById("newAddress").value.trim();
       var newGovernorate = document.getElementById("newGovernorate").value.trim();
       var newPhone = document.getElementById("newPhone").value.trim();
-      if (newCode && !validCodes.some(item => item.code === newCode)) {
-        var newObj = {
+      if (newCode) {
+        // التأكد من عدم وجود الرمز مسبقاً
+        var exists = validCodes.some(item => item.code === newCode);
+        if (exists) {
+          alert("الرمز موجود بالفعل!");
+          return;
+        }
+        db.collection("codes").add({
           code: newCode,
           pharmacyName: newPharmacyName,
           address: newAddress,
           governorate: newGovernorate,
           phone: newPhone
-        };
-        validCodes.push(newObj);
-        saveCodes();
-        document.getElementById("newCode").value = "";
-        document.getElementById("newPharmacyName").value = "";
-        document.getElementById("newAddress").value = "";
-        document.getElementById("newGovernorate").value = "";
-        document.getElementById("newPhone").value = "";
-        populateCodesTable();
+        }).then(() => {
+          document.getElementById("newCode").value = "";
+          document.getElementById("newPharmacyName").value = "";
+          document.getElementById("newAddress").value = "";
+          document.getElementById("newGovernorate").value = "";
+          document.getElementById("newPhone").value = "";
+          fetchValidCodes();
+          setTimeout(populateCodesTable, 1000);
+        }).catch((error) => {
+          console.error("Error adding new code: ", error);
+        });
       } else {
-        alert("الرمز غير صالح أو موجود بالفعل!");
+        alert("الرمز غير صالح!");
       }
     }
   </script>
